@@ -123,7 +123,7 @@ nav button[aria-current=true],#tasksView button[aria-pressed=true]{background:#e
 .task-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eee8fb}
 .task-row label{flex:1;display:flex;gap:8px;align-items:center;overflow-wrap:anywhere}
 .task-row input:checked+span{text-decoration:line-through;color:#655e72}
-.move-handle{-webkit-touch-callout:none}
+#cards .category-head{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 #cards .drag-active{outline:2px solid var(--accent);animation:card-wiggle .25s ease-in-out infinite alternate}
 #cards .drag-target{outline:2px dashed var(--accent);outline-offset:-4px}
 @keyframes card-wiggle{from{transform:rotate(-.8deg)}to{transform:rotate(.8deg)}}
@@ -283,29 +283,31 @@ function render() {
       target?.classList.remove('drag-target');
       target = null;
     }
-    handle.onpointerdown = event => {
-      if (!event.isPrimary || event.button !== 0) return;
+    const dragArea = handle.parentElement;
+    dragArea.oncontextmenu = event => { if (!event.target.closest("button")) event.preventDefault(); };
+    dragArea.onpointerdown = event => {
+      if (!event.isPrimary || event.button !== 0 || event.target.closest("button")) return;
       press = {x:event.clientX,y:event.clientY};
-      handle.setPointerCapture(event.pointerId);
+      dragArea.setPointerCapture(event.pointerId);
       timer = setTimeout(() => card.classList.add('drag-active'),420);
     };
-    handle.onpointermove = event => {
+    dragArea.onpointermove = event => {
       if (!press) return;
       if (!card.classList.contains('drag-active')) {
-        if (Math.hypot(event.clientX-press.x,event.clientY-press.y)>10) clearDrag();
+        if (Math.hypot(event.clientX-press.x,event.clientY-press.y)>18) clearDrag();
         return;
       }
       target?.classList.remove('drag-target');
       target = document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-category]');
       if (target !== card) target?.classList.add('drag-target');
     };
-    handle.onpointerup = () => {
-      const destination = target?.dataset.category;
+    dragArea.onpointerup = event => {
+      const destination = card.classList.contains("drag-active") ? document.elementFromPoint(event.clientX,event.clientY)?.closest("[data-category]")?.dataset.category : null;
       clearDrag();
       if (destination && destination !== id) reorder(id,destination);
     };
-    handle.onpointercancel = clearDrag;
-    handle.onlostpointercapture = clearDrag;
+    dragArea.onpointercancel = clearDrag;
+    dragArea.onlostpointercapture = clearDrag;
     const body = card.querySelector('.category-body');
     body.id = 'details-'+id;
     toggle.setAttribute('aria-controls',body.id);
@@ -525,6 +527,7 @@ if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
 }
 </script>
 </html>
+
 
 
 
