@@ -1,4 +1,4 @@
-const cacheName = 'day-by-steps-v1';
+const cacheName = 'day-by-steps-v2';
 const files = ['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install', event => event.waitUntil(caches.open(cacheName).then(cache => cache.addAll(files))));
 self.addEventListener('fetch', event => {
@@ -10,3 +10,4 @@ self.addEventListener('fetch', event => {
     return Response.error();
   }));
 });
+
