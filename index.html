@@ -125,7 +125,7 @@ nav button[aria-current=true],#tasksView button[aria-pressed=true]{background:#e
 .task-row input:checked+span{text-decoration:line-through;color:#655e72}
 #cards .category-head{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 #cards .drag-active{position:relative;z-index:5;pointer-events:none;box-shadow:0 14px 32px #24243830;translate:var(--drag-x,0px) var(--drag-y,0px);animation:card-wiggle .38s ease-in-out infinite alternate}
-#cards .drag-target{outline:2px dashed var(--accent);outline-offset:-4px}
+#cards article[data-category]{position:relative}
 @keyframes card-wiggle{from{transform:rotate(-.55deg)}to{transform:rotate(.55deg)}}
 @media(prefers-reduced-motion:reduce){#cards .drag-active{animation:none}}
 </style>
@@ -275,42 +275,51 @@ function render() {
     card.dataset.category = id;
     let press = null;
     let timer;
-    let target;
+    let preview;
+    let origin;
+    function previewMove(destination) {
+      const cards = [...$('cards').children];
+      const before = new Map(cards.filter(item => item !== card).map(item => [item,item.getBoundingClientRect()]));
+      const from = preview.indexOf(id);
+      const to = preview.indexOf(destination);
+      preview.splice(from,1);
+      preview.splice(to,0,id);
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      for (const item of cards) {
+        item.getAnimations().forEach(animation => { if (animation.id === 'reorder-preview') animation.cancel(); });
+        item.style.order = preview.indexOf(item.dataset.category);
+      }
+      if (reduced) return;
+      for (const [item,old] of before) {
+        const next = item.getBoundingClientRect();
+        const x = old.left-next.left;
+        const y = old.top-next.top;
+        if (x || y) item.animate([{transform:'translate('+x+'px,'+y+'px)'},{transform:'none'}],{id:'reorder-preview',duration:180,easing:'ease-out'});
+      }
+    }
     function clearDrag() {
       clearTimeout(timer);
       press = null;
       card.classList.remove('drag-active');
       card.style.removeProperty('--drag-x');
       card.style.removeProperty('--drag-y');
-      target?.classList.remove('drag-target');
-      target = null;
-    }
-    const dragArea = handle.parentElement;
-    dragArea.oncontextmenu = event => { if (!event.target.closest("button")) event.preventDefault(); };
-    dragArea.onpointerdown = event => {
-      if (!event.isPrimary || event.button !== 0 || event.target.closest("button")) return;
-      press = {x:event.clientX,y:event.clientY};
-      dragArea.setPointerCapture(event.pointerId);
-      timer = setTimeout(() => card.classList.add('drag-active'),420);
-    };
-    dragArea.onpointermove = event => {
-      if (!press) return;
-      if (!card.classList.contains('drag-active')) {
-        if (Math.hypot(event.clientX-press.x,event.clientY-press.y)>18) clearDrag();
-        return;
+      const target = document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-category]');
+      if (target && target !== card && !target.getAnimations().some(animation => animation.id === 'reorder-preview')) {
+        previewMove(target.dataset.category);
       }
-      target?.classList.remove('drag-target');
-      target = document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-category]');
-      card.style.setProperty('--drag-x',(event.clientX-press.x)+'px');
-      card.style.setProperty('--drag-y',(event.clientY-press.y)+'px');
-      if (target !== card) target?.classList.add('drag-target');
+      card.style.setProperty('--drag-x',(event.clientX-press.x+origin.x-card.offsetLeft)+'px');
+      card.style.setProperty('--drag-y',(event.clientY-press.y+origin.y-card.offsetTop)+'px');
     };
-    dragArea.onpointerup = event => {
-      const destination = card.classList.contains("drag-active") ? document.elementFromPoint(event.clientX,event.clientY)?.closest("[data-category]")?.dataset.category : null;
+    dragArea.onpointerup = () => {
+      const order = preview;
       clearDrag();
-      if (destination && destination !== id) reorder(id,destination);
+      if (order && order.join() !== data.order.join()) {
+        data.order = order;
+        save();
+        render();
+      }
     };
-    dragArea.onpointercancel = clearDrag;
+        dragArea.onpointercancel = clearDrag;
     dragArea.onlostpointercapture = clearDrag;
     const body = card.querySelector('.category-body');
     body.id = 'details-'+id;
@@ -531,6 +540,7 @@ if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
 }
 </script>
 </html>
+
 
 
 
