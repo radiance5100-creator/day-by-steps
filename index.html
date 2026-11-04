@@ -65,9 +65,9 @@ header p{color:#58586d;font-size:14px}
 h1{font-size:clamp(32px,5vw,48px);letter-spacing:-.055em}
 #cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:12px;align-items:start}
 #cards article{--tint:#eee8fb;--accent:#6746a4;background:var(--tint);margin:0;border-color:transparent;box-shadow:none;border-radius:24px;padding:12px 14px}
-#cards article:nth-child(4n+2){--tint:#e0f1f5;--accent:#236983}
-#cards article:nth-child(4n+3){--tint:#e2f3ea;--accent:#246d53}
-#cards article:nth-child(4n+4){--tint:#faeae4;--accent:#8e493a}
+#cards article:is([data-category=quiet],[data-category=clean]){--tint:#e0f1f5;--accent:#236983}
+#cards article:is([data-category=child],[data-category=plan]){--tint:#e2f3ea;--accent:#246d53}
+#cards article:is([data-category=portfolio],[data-category=pages]){--tint:#faeae4;--accent:#8e493a}
 .category-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .category-head h2{font-size:16px}
 .category-toggle{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;margin:0;padding:0;border:0;background:#ffffff80;color:var(--accent);border-radius:50%}
@@ -124,9 +124,9 @@ nav button[aria-current=true],#tasksView button[aria-pressed=true]{background:#e
 .task-row label{flex:1;display:flex;gap:8px;align-items:center;overflow-wrap:anywhere}
 .task-row input:checked+span{text-decoration:line-through;color:#655e72}
 #cards .category-head{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-#cards .drag-active{outline:2px solid var(--accent);animation:card-wiggle .25s ease-in-out infinite alternate}
+#cards .drag-active{position:relative;z-index:5;pointer-events:none;box-shadow:0 14px 32px #24243830;translate:var(--drag-x,0px) var(--drag-y,0px);animation:card-wiggle .38s ease-in-out infinite alternate}
 #cards .drag-target{outline:2px dashed var(--accent);outline-offset:-4px}
-@keyframes card-wiggle{from{transform:rotate(-.8deg)}to{transform:rotate(.8deg)}}
+@keyframes card-wiggle{from{transform:rotate(-.55deg)}to{transform:rotate(.55deg)}}
 @media(prefers-reduced-motion:reduce){#cards .drag-active{animation:none}}
 </style>
 <main><nav class="row" aria-label="Разделы"><button id="trackerTab">Трекер</button><button id="tasksTab">Задачи</button></nav><div id="trackerView">
@@ -280,6 +280,8 @@ function render() {
       clearTimeout(timer);
       press = null;
       card.classList.remove('drag-active');
+      card.style.removeProperty('--drag-x');
+      card.style.removeProperty('--drag-y');
       target?.classList.remove('drag-target');
       target = null;
     }
@@ -299,6 +301,8 @@ function render() {
       }
       target?.classList.remove('drag-target');
       target = document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-category]');
+      card.style.setProperty('--drag-x',(event.clientX-press.x)+'px');
+      card.style.setProperty('--drag-y',(event.clientY-press.y)+'px');
       if (target !== card) target?.classList.add('drag-target');
     };
     dragArea.onpointerup = event => {
@@ -527,6 +531,7 @@ if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
 }
 </script>
 </html>
+
 
 
 
