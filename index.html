@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#f7f7fb"><link rel="apple-touch-icon" href="./icon-192.png"><title>День по шагам</title>
+<style>
+*{box-sizing:border-box}
+:root{color-scheme:light;--ink:#192b25;--muted:#52665d;--line:#dce5de;--green:#21634b;--paper:#fff}
+body{margin:0;background:#eef3ef;color:var(--ink);font:16px/1.5 system-ui,sans-serif}
+main{max-width:1440px;margin:auto;padding:clamp(14px,4vw,48px)}
+header{background:#18372e;color:#fff;border-radius:26px;padding:clamp(24px,5vw,56px);background-image:radial-gradient(ellipse at top right,#316550,transparent 65%)}
+header .muted{color:#b9e7cf;text-transform:uppercase;letter-spacing:.16em;font-size:.72rem;font-weight:750}
+h1{font-size:clamp(38px,7vw,72px);line-height:1;letter-spacing:-.06em;margin:12px 0}
+header p{margin:0;color:#d9ece2}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:20px}
+#period{min-width:11ch;text-align:center;text-transform:capitalize}
+button{font:inherit;color:inherit;background:var(--paper);border:1px solid var(--line);border-radius:12px;min-height:44px;padding:7px 12px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--green)}
+button:disabled{cursor:default;opacity:.45}
+:focus-visible{outline:3px solid #337757;outline-offset:2px}
+#today{margin-left:auto}
+#summary{font-size:.85rem;color:var(--muted);margin:12px 0}
+article{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:clamp(13px,2vw,24px);margin:10px 0;box-shadow:0 2px 5px #18372e09}
+h2{font-size:clamp(16px,2vw,20px);line-height:1.25;margin:0;letter-spacing:-.025em}
+small,.muted{color:var(--muted)}
+small{display:block;margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:14px 0 10px}
+.grid button{padding:3px 0;min-width:0;background:#f1f5f1;font-size:12px;font-variant-numeric:tabular-nums;line-height:1.35;border-radius:9px}
+.grid span{display:block}
+.grid span+span{font-size:15px;font-weight:750}
+.grid button[aria-pressed=true]{background:#d1ebdc;border-color:#add7be;color:#174e38}
+.grid button.current{border:2px solid var(--green)}
+.count{font-weight:700;font-variant-numeric:tabular-nums}
+progress{width:100%;height:7px;display:block;margin-top:7px;accent-color:var(--green);border:0;border-radius:99px;overflow:hidden;background:#e9efea}
+progress::-webkit-progress-bar{background:#e9efea}
+progress::-webkit-progress-value{background:var(--green);border-radius:99px}
+progress::-moz-progress-bar{background:var(--green)}
+#houseWeeks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,175px),1fr));gap:10px;margin-top:14px}
+#houseWeeks section{background:#f1f5f1;border-radius:12px;padding:12px}
+h3{font-size:15px;margin:0 0 5px}
+.house label{display:flex;align-items:center;gap:6px;min-height:38px;font-size:14px;cursor:pointer}
+input{accent-color:var(--green)}
+footer{margin:20px 0;font-size:13px}
+@media(min-width:1200px){.grid{grid-template-columns:repeat(var(--days),minmax(0,1fr))}.grid button{font-size:11px}}
+.category-toggle{display:none}
+.house textarea{display:block;width:100%;min-height:64px;resize:vertical;border:1px solid #bacbc0;border-radius:8px;padding:8px;font:inherit;color:inherit;background:white}
+@media(max-width:600px){
+.category-toggle{display:inline-flex;align-items:center;margin-top:8px;font-size:14px}
+article[data-collapsed=true] .category-body{display:none}
+}
+.week-grid{display:none}
+.category-head h2 small{font-size:13px;font-weight:500;letter-spacing:normal;margin:3px 0 0}
+@media(max-width:600px){
+.category-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.category-toggle{margin:0;flex:none;width:44px;height:44px;padding:0;justify-content:center;border:0;background:#f1f5f1}
+.category-toggle[aria-expanded=true] svg{transform:rotate(180deg)}
+article[data-collapsed=true] .week-grid{display:grid;margin:8px 0 0}
+article[data-collapsed=true] .count,article[data-collapsed=true] progress{display:none}
+}
+body{background:#f7f7fb;color:#242438}
+main{max-width:1120px;padding:clamp(14px,4vw,38px)}
+header{background:none;color:inherit;padding:10px 0 4px;border-radius:0}
+header .muted{color:#605389}
+header p{color:#58586d;font-size:14px}
+h1{font-size:clamp(32px,5vw,48px);letter-spacing:-.055em}
+#cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:12px;align-items:start}
+#cards article{--tint:#eee8fb;--accent:#6746a4;background:var(--tint);margin:0;border-color:transparent;box-shadow:none;border-radius:24px;padding:12px 14px}
+#cards article:nth-child(4n+2){--tint:#e0f1f5;--accent:#236983}
+#cards article:nth-child(4n+3){--tint:#e2f3ea;--accent:#246d53}
+#cards article:nth-child(4n+4){--tint:#faeae4;--accent:#8e493a}
+.category-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.category-head h2{font-size:16px}
+.category-toggle{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;margin:0;padding:0;border:0;background:#ffffff80;color:var(--accent);border-radius:50%}
+.category-toggle[aria-expanded=true] svg{transform:rotate(180deg)}
+#cards article[data-collapsed=true] :is(.category-body,.count,progress){display:none}
+#cards article[data-collapsed=true] .week-grid{display:grid;margin:6px 0 0}
+#cards .grid{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+#cards .grid button{display:grid;justify-items:center;align-content:center;gap:4px;background:transparent;border:0;color:#434356;font-size:11px;min-height:50px}
+#cards .grid button span+span{display:grid;place-items:center;width:26px;height:26px;border:1px solid var(--accent);border-radius:50%;color:transparent;background:#ffffff59}
+#cards .grid button[aria-pressed=true] span+span{background:var(--accent);color:#fff}
+#cards .grid button.current{background:#ffffff9c;border-radius:12px;font-weight:750}
+#cards progress{accent-color:var(--accent);background:#ffffff80}
+#cards progress::-webkit-progress-bar{background:#ffffff80}
+#cards progress::-webkit-progress-value{background:var(--accent)}
+#cards progress::-moz-progress-bar{background:var(--accent)}
+.week-caption{font-size:12px;color:#58586d;margin:0 0 10px}
+.category-title{display:flex;align-items:center;gap:10px;min-width:0}
+.badge{display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:11px;background:#ffffffad;color:var(--accent)}
+.category-toggle{background:transparent}
+.category-toggle:hover{background:#ffffffa0}
+#prev,#next{display:grid;place-items:center;width:44px;padding:0;border-color:transparent;background:#eceaf5;color:#50436e}
+#cards .grid span+span svg,.house-mark svg{width:15px;height:15px}
+#cards .grid button:not([aria-pressed=true]) span+span{border-color:color-mix(in srgb,var(--accent) 46%,transparent)}
+article:has(#houseWeeks){--accent:#6746a4;background:#eee8fb;border:0;box-shadow:none;padding:14px;margin-top:12px}
+#houseWeeks{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+#houseWeeks[data-expanded=false] section:not([data-active=true]){display:none}
+#houseWeeks section{background:#ffffff80;border-radius:16px}
+#houseWeeks section[data-active=true]{order:-1}
+.house{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px}
+.house-item{min-width:0}
+.house label{position:relative}
+.house label input{position:absolute;opacity:0}
+.house-mark{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;border:1px solid #a195bb;color:transparent}
+.house input:checked+.house-mark{background:var(--accent);color:white;border-color:var(--accent)}
+.house input:focus-visible+.house-mark{outline:2px solid var(--accent);outline-offset:2px}
+.house input:disabled+.house-mark{opacity:.45}
+.house textarea{min-height:48px;border-color:#d8cfea;font-size:16px}
+.house-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 8px}
+.house-item textarea{grid-column:1/-1;margin-top:4px}
+.house-item textarea[hidden]{display:none}
+.comment-toggle{display:grid;place-items:center;width:44px;padding:0;border:0;background:transparent;color:#615479}
+.comment-toggle[data-has-note=true],.comment-toggle[aria-expanded=true]{background:#e4daf7;color:#56368c}
+.move-handle{touch-action:none;cursor:grab;user-select:none}
+.move-handle:active{cursor:grabbing}
+#cards .grid button[aria-pressed=mixed] span+span{background:#ffffffa0;color:var(--accent);border-color:var(--accent)}
+.house-item{grid-template-columns:32px minmax(0,1fr) auto}
+.house-item input[type=text]{width:100%;font:inherit;color:inherit;background:#ffffff80;border:1px solid #d8cfea;border-radius:9px;padding:7px}
+nav button[aria-current=true],#tasksView button[aria-pressed=true]{background:#e4daf7;color:#56368c}
+#tasksView h1{margin-top:24px}
+#tasksView input:not([type=checkbox]){font:inherit;min-height:44px;border:1px solid #d8cfea;border-radius:10px;padding:8px;min-width:0}
+#taskText{flex:1}
+#taskForm{margin-top:0}
+.task-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eee8fb}
+.task-row label{flex:1;display:flex;gap:8px;align-items:center;overflow-wrap:anywhere}
+.task-row input:checked+span{text-decoration:line-through;color:#655e72}
+</style>
+<main><nav class="row" aria-label="Разделы"><button id="trackerTab">Трекер</button><button id="tasksTab">Задачи</button></nav><div id="trackerView">
+<header><span class="muted">Ежедневный трекер</span><h1>День по шагам</h1><p>Отмечай сделанное. Если день сорвался, клетки могут остаться пустыми.</p></header>
+<div class="row"><button id="prev" aria-label="Предыдущий месяц">←</button><strong id="period"></strong><button id="next" aria-label="Следующий месяц">→</button><button id="today">Этот месяц</button></div>
+<p id="summary" role="status"></p>
+<small>Длинные занятия: первое нажатие — 50%, второе — 100%, третье снимает отметку.</small><p id="weekCaption" class="week-caption"></p><section id="cards" aria-label="Ежедневные категории"></section>
+<article>
+<div class="category-head"><div class="category-title"><span id="houseIcon" class="badge"></span><h2>Бытовые вопросы<small>2 в неделю</small></h2></div><button id="houseToggle" class="category-toggle" aria-controls="houseWeeks"></button></div>
+<small>ЖКХ, покупка или поездка, которую давно откладываешь. Отметь один пункт за каждый закрытый вопрос.</small>
+<div id="houseWeeks" data-expanded="false"></div>
+</article>
+<footer class="muted">Отметки сохраняются в этом браузере. Неделя начинается в понедельник.</footer>
+<p id="warning" role="alert" hidden>Сохранение недоступно. Отметки останутся до закрытия страницы.</p>
+</div>
+<section id="tasksView" hidden>
+<h1>Задачи</h1>
+<div class="row"><button id="taskToday">Сегодня</button><button id="taskTomorrow">Завтра</button><input type="date" id="taskDate" aria-label="Дата задач"></div>
+<article><form id="taskForm" class="row"><input id="taskText" required maxlength="250" aria-label="Новая задача" placeholder="Что нужно сделать?"><button>Добавить</button></form><div id="taskList"></div></article>
+</section>
+</main>
+<script>
+'use strict';
+const categories = [
+  ['lfk','ЛФК','40 минут','Выдели время на свой комплекс упражнений.'],
+  ['quiet','Тишина','20 минут','Побудь в тишине без телефона и других занятий.'],
+  ['child','Время с ребёнком','2 часа','Возьми заботу о дочке на себя, чтобы жена могла отдохнуть или заняться своими делами.'],
+  ['portfolio','Работа над портфолио','1 час','Выбери один фрагмент кейса и поработай над ним.'],
+  ['content','Контент','1 час','Подумай над темой, набросай идеи или черновик для Threads или Telegram. Публиковать сегодня необязательно.'],
+  ['clean','Уборка дома','20 минут','Выбери одну зону и поставь таймер.'],
+  ['plan','Планирование следующего дня','10 минут · вечером','Запиши первый шаг на завтра и выбери, когда начнёшь.'],
+  ['electronics','Обучение Электроника','','Разбери одну тему или сделай одно упражнение.'],
+  ['leads','Поиск заказов','','Напиши одному клиенту, откликнись на заказ или напомни о себе.'],
+  ['pages','Практика «3 страницы»','15 минут · утром','Пиши от руки всё, что приходит в голову.']
+];
+const $ = id => document.getElementById(id);
+const storageKey = 'day-by-steps-categories-v1';
+let data = {days:{}, weeks:{}};
+try { data = JSON.parse(localStorage.getItem(storageKey)) || data; }
+catch { $('warning').hidden = false; }
+function save() {
+  try { localStorage.setItem(storageKey,JSON.stringify(data)); }
+  catch { $('warning').hidden = false; }
+}
+function dateKey(d) {
+  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+}
+function add(d,n) { const result = new Date(d); result.setDate(result.getDate()+n); return result; }
+function monday() { const now = new Date(); return add(now,-((now.getDay()+6)%7)); }
+const dayFormat = new Intl.DateTimeFormat('ru',{weekday:'short'});
+const dateFormat = new Intl.DateTimeFormat('ru',{day:'numeric',month:'short'});
+function month(d = new Date(), offset = 0) { return new Date(d.getFullYear(),d.getMonth()+offset,1); }
+const monthFormat = new Intl.DateTimeFormat('ru',{month:'long',year:'numeric'});
+let start = month();
+const expanded = new Set();
+const partial = new Set(['lfk','child','portfolio','content']);
+let dragging = null;
+function mark(id,key) {
+  const value = data.days[key]?.[id];
+  return value === 0.5 ? 0.5 : Number(Boolean(value));
+}
+function changeMark(id,key) {
+  const value = mark(id,key);
+  (data.days[key] ||= {})[id] = value === 1 ? false : value === 0 || !partial.has(id) ? (partial.has(id) ? 0.5 : true) : true;
+  save();
+  render();
+}
+function reorder(id,target) {
+  const order = data.order.slice();
+  order.splice(order.indexOf(id),1);
+  order.splice(data.order.indexOf(target),0,id);
+  data.order = order;
+  save();
+  render();
+  $('move-'+id).focus();
+}
+const paths = {
+  down:'<path d="m6 9 6 6 6-6"/>',
+  left:'<path d="m15 18-6-6 6-6"/>',
+  right:'<path d="m9 18 6-6-6-6"/>',
+  check:'<path d="m5 12 4 4L19 6"/>',
+  lfk:'<path d="m3 14 4-4 4 4 5-7 5 4"/>',
+  quiet:'<path d="M20 15A8 8 0 0 1 9 4a8 8 0 1 0 11 11Z"/>',
+  child:'<path d="M20 8c0 4-8 10-8 10S4 12 4 8a4 4 0 0 1 8 0 4 4 0 0 1 8 0Z"/>',
+  portfolio:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3M3 13h18"/>',
+  content:'<path d="M4 4h16v12H9l-5 4zM8 8h8m-8 4h5"/>',
+  clean:'<path d="m12 3 2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/>',
+  plan:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4m8-4v4M4 10h16"/>',
+  pages:'<path d="M5 4h14v16H5zM8 8h8m-8 4h8m-8 4h5"/>',
+  electronics:'<path d="m13 2-8 12h6l-1 8 9-12h-6z"/>',
+  leads:'<circle cx="10" cy="10" r="5"/><path d="m14 14 5 5"/>',
+  home:'<path d="m3 10 9-7 9 7M5 9v11h14V9m-9 11v-6h4v6"/>'
+};
+function icon(name) {
+  return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths[name]+'</svg>';
+}
+$('prev').innerHTML = icon('left');
+$('next').innerHTML = icon('right');
+$('houseIcon').innerHTML = icon('home');
+const houseToggle = $('houseToggle');
+houseToggle.innerHTML = icon('down');
+function showHouseHistory(open) {
+  $('houseWeeks').dataset.expanded = String(open);
+  houseToggle.setAttribute('aria-expanded',open);
+  houseToggle.setAttribute('aria-label',open ? 'Скрыть остальные недели' : 'Показать остальные недели');
+}
+showHouseHistory(false);
+houseToggle.onclick = () => showHouseHistory(houseToggle.getAttribute('aria-expanded') !== 'true');
+function render() {
+  const today = dateKey(new Date());
+  const length = add(month(start,1),-1).getDate();
+  const dates = Array.from({length},(_,i) => add(start,i));
+  $('period').textContent = monthFormat.format(start);
+  $('next').disabled = dateKey(start) >= dateKey(month());
+    $('cards').replaceChildren();
+  const anchor = dateKey(start) === dateKey(month()) ? new Date() : dates[length-1];
+  const weekStart = add(anchor,-((anchor.getDay()+6)%7));
+  const weekDates = Array.from({length:7},(_,i) => add(weekStart,i));
+  const weekKeys = weekDates.map(dateKey);
+  $('weekCaption').textContent = 'Неделя · '+dateFormat.format(weekStart)+' — '+dateFormat.format(weekDates[6]);
+  let total = 0;
+  data.order ||= [];
+  for (const [id] of categories) {
+    if (!data.order.includes(id)) data.order.push(id);
+  }
+  for (const id of data.order) {
+    const [,title,duration,note] = categories.find(category => category[0] === id);
+    const card = document.createElement('article');
+    card.innerHTML = '<div class="category-head"><div class="category-title"><span class="badge">'+icon(id)+'</span><h2>'+title+(duration ? '<small>'+duration+'</small>' : '')+'</h2></div><button type="button" class="category-toggle"></button></div><div class="grid week-grid"></div><div class="category-body"><small>'+note+'</small><div class="grid"></div></div><small class="count"></small><progress max="7" aria-label="'+title+' за месяц"></progress>';
+    const toggle = card.querySelector('.category-toggle');
+    const handle = card.querySelector('.category-title');
+    handle.tabIndex = 0;
+    handle.id = 'move-'+id;
+    handle.classList.add('move-handle');
+
+    handle.title = 'Перетащи или используй ↑ и ↓';
+    handle.setAttribute('aria-label','Переместить · '+title+' · стрелки вверх и вниз');
+
+    handle.onkeydown = event => {
+      const offset = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
+      if (!offset) return;
+      event.preventDefault();
+      const target = data.order[data.order.indexOf(id)+offset];
+      if (target) reorder(id,target);
+    };
+    card.dataset.category = id;
+    handle.onpointerdown = event => {
+      dragging = id;
+      handle.setPointerCapture(event.pointerId);
+    };
+    handle.onpointercancel = () => { dragging = null; };
+    handle.onpointerup = event => {
+      const target = document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-category]')?.dataset.category;
+      if (dragging === id && target && target !== id) reorder(id,target);
+      dragging = null;
+    };
+    const body = card.querySelector('.category-body');
+    body.id = 'details-'+id;
+    toggle.setAttribute('aria-controls',body.id);
+    function updateToggle() {
+      const open = expanded.has(id);
+      card.dataset.collapsed = String(!open);
+      toggle.innerHTML = icon('down');
+      toggle.setAttribute('aria-expanded',open);
+      toggle.setAttribute('aria-label',(open ? 'Свернуть месяц' : 'Показать месяц')+' · '+title);
+    }
+    toggle.onclick = () => {
+      if (expanded.has(id)) expanded.delete(id);
+      else expanded.add(id);
+      updateToggle();
+    };
+    updateToggle();
+    if (id === 'plan') {
+      const link = document.createElement('button');
+      link.textContent = 'Задачи на завтра';
+      card.querySelector('.category-head').after(link);
+      link.onclick = () => { selectTaskDate(1); showTasks(true); };
+    }
+    const grid = body.querySelector('.grid');
+    grid.style.setProperty('--days',length);
+    let count = 0;
+    const weekGrid = card.querySelector('.week-grid');
+    for (const date of dates) {
+      const key = dateKey(date);
+      const value = mark(id,key);
+      const done = value === 1;
+      count += value;
+      const button = document.createElement('button');
+      button.innerHTML = '<span>'+date.getDate()+' '+dayFormat.format(date)+'</span><span aria-hidden="true">'+(done?icon('check'):value === 0.5 ? '½' : '')+'</span>';
+      button.setAttribute('aria-label',title+', '+dateFormat.format(date));
+      button.setAttribute('aria-pressed',value === 0.5 ? 'mixed' : done);
+      button.disabled = key > today;
+      if (key === today) { button.className = 'current'; button.setAttribute('aria-current','date'); }
+      button.id = id+'-'+key;
+      button.onclick = () => {
+        changeMark(id,key);
+        $(button.id).focus();
+      };
+      grid.append(button);
+      if (weekKeys.includes(key)) addWeekButton(button,key);
+    }
+    for (const date of weekDates) {
+      const key = dateKey(date);
+      if (weekGrid.querySelector('[data-day="'+key+'"]')) continue;
+      const button = document.createElement('button');
+      const value = mark(id,key);
+      const done = value === 1;
+      button.innerHTML = '<span>'+date.getDate()+' '+dayFormat.format(date)+'</span><span aria-hidden="true">'+(done?icon('check'):value === 0.5 ? '½' : '')+'</span>';
+      button.setAttribute('aria-label',title+', '+dateFormat.format(date));
+      button.setAttribute('aria-pressed',value === 0.5 ? 'mixed' : done);
+      button.disabled = key > today;
+      addWeekButton(button,key);
+    }
+    weekGrid.append(...[...weekGrid.children].sort((a,b) => a.dataset.day.localeCompare(b.dataset.day)));
+    function addWeekButton(source,key) {
+      const button = source.cloneNode(true);
+      button.id = 'week-'+id+'-'+key;
+      button.dataset.day = key;
+      button.onclick = () => {
+        changeMark(id,key);
+        $(button.id).focus();
+      };
+      weekGrid.append(button);
+    }
+    total += count;
+    card.querySelector('.count').textContent = count + ' из ' + length + ' дней';
+    card.querySelector('progress').max = length;
+    card.querySelector('progress').value = count;
+    $('cards').append(card);
+  }
+  $('summary').textContent = 'Отметок за месяц: '+total;
+  $('houseWeeks').replaceChildren();
+
+  const activeWeek = dateKey(weekStart);
+  for (let first = add(start,-((start.getDay()+6)%7)); first < month(start,1); first = add(first,7)) {
+    const week = dateKey(first);
+    const household = data.weeks[week] || [false,false];
+    const row = document.createElement('section');
+    row.dataset.active = String(week === activeWeek);
+    row.innerHTML = '<h3>'+dateFormat.format(first)+' — '+dateFormat.format(add(first,6))+'</h3><div class="house"><label><input type="checkbox"> Первый вопрос</label><label><input type="checkbox"> Второй вопрос</label></div><small></small>';
+    const count = row.querySelector('small');
+    const titles = data.weekTitles?.[week] || ['',''];
+    const notes = data.weekNotes?.[week] || ['',''];
+    row.querySelectorAll('.house label').forEach((label,i) => {
+      const note = document.createElement('textarea');
+      note.rows = 2;
+      note.placeholder = 'Что сделал?';
+      note.setAttribute('aria-label', (i === 0 ? 'Первый вопрос' : 'Второй вопрос')+' · '+row.querySelector('h3').textContent);
+      note.value = notes[i];
+      note.disabled = week > today;
+      note.oninput = () => {
+        notes[i] = note.value;
+        (data.weekNotes ||= {})[week] = notes;
+        save();
+      };
+      const mark = document.createElement('span');
+      mark.className = 'house-mark';
+      mark.innerHTML = icon('check');
+      label.querySelector('input').after(mark);
+      const item = document.createElement('div');
+      item.className = 'house-item';
+      label.before(item);
+      const comment = document.createElement('button');
+      comment.type = 'button';
+      comment.className = 'comment-toggle';
+      comment.innerHTML = icon('content');
+      note.id = 'comment-'+week+'-'+i;
+      note.hidden = true;
+      comment.setAttribute('aria-controls',note.id);
+      function updateComment() {
+        comment.dataset.hasNote = String(Boolean(note.value.trim()));
+        comment.setAttribute('aria-expanded',String(!note.hidden));
+        comment.setAttribute('aria-label',(note.hidden ? 'Открыть' : 'Свернуть')+' комментарий · '+title.placeholder);
+      }
+      comment.onclick = () => {
+        note.hidden = !note.hidden;
+        updateComment();
+        if (!note.hidden) note.focus();
+      };
+      note.addEventListener('input',updateComment);
+      const title = document.createElement('input');
+      title.type = 'text';
+      title.placeholder = label.textContent.trim();
+      title.setAttribute('aria-label','Название · '+title.placeholder+' · '+row.querySelector('h3').textContent);
+      title.value = titles[i];
+      title.disabled = week > today;
+      title.oninput = () => {
+        titles[i] = title.value;
+        (data.weekTitles ||= {})[week] = titles;
+        save();
+      };
+      label.lastChild.remove();
+      label.querySelector('input').setAttribute('aria-label','Закрыть · '+title.placeholder);
+      item.append(label,title,comment,note);
+      updateComment();
+    });
+    const update = () => { count.textContent = household.filter(Boolean).length + ' из 2 вопросов'; };
+    row.querySelectorAll('input').forEach((box,i) => {
+      box.checked = household[i];
+      box.disabled = week > today;
+      box.onchange = () => {
+        household[i] = box.checked;
+        data.weeks[week] = household;
+        save();
+        update();
+      };
+    });
+    update();
+    $('houseWeeks').append(row);
+  }
+}
+$('prev').onclick = () => { start = month(start,-1); showHouseHistory(false); render(); };
+$('next').onclick = () => { start = month(start,1); showHouseHistory(false); render(); };
+$('today').onclick = () => { start = month(); showHouseHistory(false); render(); };
+render();function showTasks(open) {
+  $('trackerView').hidden = open;
+  $('tasksView').hidden = !open;
+  $('trackerTab').setAttribute('aria-current',String(!open));
+  $('tasksTab').setAttribute('aria-current',String(open));
+}
+function selectTaskDate(offset) {
+  $('taskDate').value = dateKey(add(new Date(),offset));
+  renderTasks();
+}
+function renderTasks() {
+  const key = $('taskDate').value || dateKey(new Date());
+  $('taskDate').value = key;
+  $('taskToday').setAttribute('aria-pressed',String(key === dateKey(new Date())));
+  $('taskTomorrow').setAttribute('aria-pressed',String(key === dateKey(add(new Date(),1))));
+  const items = (data.tasks ||= {})[key] ||= [];
+  const list = $('taskList');
+  list.replaceChildren();
+  if (!items.length) list.textContent = 'На этот день задач пока нет.';
+  items.forEach((item,index) => {
+    const row = document.createElement('div');
+    row.className = 'task-row';
+    const label = document.createElement('label');
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.checked = item.done;
+    check.onchange = () => { item.done = check.checked; save(); };
+    const title = document.createElement('span');
+    title.textContent = item.title;
+    const remove = document.createElement('button');
+    remove.textContent = 'Удалить';
+    remove.setAttribute('aria-label','Удалить задачу '+item.title);
+    remove.onclick = () => { items.splice(index,1); save(); renderTasks(); };
+    label.append(check,title);
+    row.append(label,remove);
+    list.append(row);
+  });
+}
+$('taskForm').onsubmit = event => {
+  event.preventDefault();
+  const input = $('taskText');
+  const title = input.value.trim();
+  if (!title) return;
+  data.tasks[$('taskDate').value].push({title,done:false});
+  input.value = '';
+  save();
+  renderTasks();
+  input.focus();
+};
+$('trackerTab').onclick = () => showTasks(false);
+$('tasksTab').onclick = () => showTasks(true);
+$('taskToday').onclick = () => selectTaskDate(0);
+$('taskTomorrow').onclick = () => selectTaskDate(1);
+$('taskDate').onchange = renderTasks;
+selectTaskDate(1);
+showTasks(false);
+if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(console.error);
+}
+</script>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
