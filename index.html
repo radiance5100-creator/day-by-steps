@@ -319,14 +319,47 @@ function render() {
     function clearDrag() {
       clearTimeout(timer);
       cancelAnimationFrame(frame);
-      if (press) document.documentElement.classList.remove("card-press");
+      if (press) document.documentElement.classList.remove('card-press');
       press = null;
       card.classList.remove('drag-active');
       card.style.removeProperty('--drag-x');
       card.style.removeProperty('--drag-y');
+      for (const item of $('cards').children) {
+        item.style.removeProperty('order');
+        item.getAnimations().forEach(animation => {
+          if (animation.id === 'reorder-preview') animation.cancel();
+        });
+      }
+      preview = null;
+    }
+    const dragArea = handle.parentElement;
+    dragArea.oncontextmenu = event => {
+      if (!event.target.closest('button')) event.preventDefault();
+    };
+    dragArea.onpointerdown = event => {
+      if (!event.isPrimary || event.button !== 0 || event.target.closest('button')) return;
+      event.preventDefault();
+      press = {x:event.clientX,y:event.clientY};
+      pointer = press;
+      document.documentElement.classList.add('card-press');
+      window.getSelection()?.removeAllRanges();
+      dragArea.setPointerCapture(event.pointerId);
+      timer = setTimeout(() => {
+        preview = data.order.slice();
+        origin = {x:card.offsetLeft,y:card.offsetTop,scroll:window.scrollY};
+        card.classList.add('drag-active');
+        frame = requestAnimationFrame(updateDrag);
+      },420);
+    };
+    dragArea.onpointermove = event => {
+      if (!press) return;
+      if (!preview && Math.hypot(event.clientX-press.x,event.clientY-press.y)>18) {
+        clearDrag();
+        return;
+      }
       pointer = {x:event.clientX,y:event.clientY};
     };
-    dragArea.onpointerup = () => {
+        dragArea.onpointerup = () => {
       const order = preview;
       clearDrag();
       if (order && order.join() !== data.order.join()) {
@@ -556,6 +589,7 @@ if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
 }
 </script>
 </html>
+
 
 
 
