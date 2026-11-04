@@ -128,6 +128,7 @@ nav button[aria-current=true],#tasksView button[aria-pressed=true]{background:#e
 #cards article[data-category]{position:relative}
 @keyframes card-wiggle{from{transform:rotate(-.55deg)}to{transform:rotate(.55deg)}}
 @media(prefers-reduced-motion:reduce){#cards .drag-active{animation:none}}
+html.card-press,html.card-press *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none}
 </style>
 <main><nav class="row" aria-label="Разделы"><button id="trackerTab">Трекер</button><button id="tasksTab">Задачи</button></nav><div id="trackerView">
 <header><span class="muted">Ежедневный трекер</span><h1>День по шагам</h1><p>Отмечай сделанное. Если день сорвался, клетки могут остаться пустыми.</p></header>
@@ -277,6 +278,24 @@ function render() {
     let timer;
     let preview;
     let origin;
+    let pointer;
+    let frame;
+    function updateDrag() {
+      const viewport = window.visualViewport;
+      const top = viewport?.offsetTop || 0;
+      const bottom = top + (viewport?.height || window.innerHeight);
+      const edge = 80;
+      const strength = pointer.y < top+edge ? (pointer.y-top-edge)/edge :
+        pointer.y > bottom-edge ? (pointer.y-bottom+edge)/edge : 0;
+      if (strength) window.scrollBy({top:Math.max(-1,Math.min(1,strength))*14,behavior:'instant'});
+      const target = document.elementFromPoint(pointer.x,pointer.y)?.closest('[data-category]');
+      if (target && target !== card && !target.getAnimations().some(animation => animation.id === 'reorder-preview')) {
+        previewMove(target.dataset.category);
+      }
+      card.style.setProperty('--drag-x',(pointer.x-press.x+origin.x-card.offsetLeft)+'px');
+      card.style.setProperty('--drag-y',(pointer.y-press.y+origin.y-card.offsetTop+window.scrollY-origin.scroll)+'px');
+      frame = requestAnimationFrame(updateDrag);
+    }
     function previewMove(destination) {
       const cards = [...$('cards').children];
       const before = new Map(cards.filter(item => item !== card).map(item => [item,item.getBoundingClientRect()]));
@@ -299,16 +318,13 @@ function render() {
     }
     function clearDrag() {
       clearTimeout(timer);
+      cancelAnimationFrame(frame);
+      if (press) document.documentElement.classList.remove("card-press");
       press = null;
       card.classList.remove('drag-active');
       card.style.removeProperty('--drag-x');
       card.style.removeProperty('--drag-y');
-      const target = document.elementFromPoint(event.clientX,event.clientY)?.closest('[data-category]');
-      if (target && target !== card && !target.getAnimations().some(animation => animation.id === 'reorder-preview')) {
-        previewMove(target.dataset.category);
-      }
-      card.style.setProperty('--drag-x',(event.clientX-press.x+origin.x-card.offsetLeft)+'px');
-      card.style.setProperty('--drag-y',(event.clientY-press.y+origin.y-card.offsetTop)+'px');
+      pointer = {x:event.clientX,y:event.clientY};
     };
     dragArea.onpointerup = () => {
       const order = preview;
@@ -540,6 +556,7 @@ if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
 }
 </script>
 </html>
+
 
 
 
