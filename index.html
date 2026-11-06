@@ -155,6 +155,10 @@ html.card-press,html.card-press *{-webkit-user-select:none!important;user-select
 <h1>Задачи</h1>
 <div class="row"><button id="taskYesterday">Вчера</button><button id="taskToday">Сегодня</button><button id="taskTomorrow">Завтра</button><input type="date" id="taskDate" aria-label="Дата задач"><select id="taskHistory" aria-label="Прошлые дни с задачами" hidden></select></div>
 <article><form id="taskForm" class="row"><input id="taskText" required maxlength="250" aria-label="Новая задача" placeholder="Что нужно сделать?"><button>Добавить</button></form><div id="taskList"></div></article>
+<article id="pastOpenTasks" hidden>
+<h2>Незакрытые задачи за прошлые дни</h2>
+<div id="pastOpenTaskList"></div>
+</article>
 </section>
 <section id="moodView" hidden>
 <h1>Самочувствие</h1>
@@ -587,24 +591,56 @@ function renderTasks() {
   const list = $('taskList');
   list.replaceChildren();
   if (!items.length) list.textContent = 'На этот день задач пока нет.';
-  items.forEach((item,index) => {
-    const row = document.createElement('div');
-    row.className = 'task-row';
-    const label = document.createElement('label');
-    const check = document.createElement('input');
-    check.type = 'checkbox';
-    check.checked = item.done;
-    check.onchange = () => { item.done = check.checked; save(); };
-    const title = document.createElement('span');
-    title.textContent = item.title;
+  items.forEach((item,index) => list.append(taskRow(item, () => {
+    items.splice(index,1);
+    save();
+    renderTasks();
+  })));
+  renderPastOpenTasks(pastDates,key);
+}
+function taskRow(item,onRemove,date) {
+  const row = document.createElement('div');
+  row.className = 'task-row';
+  const label = document.createElement('label');
+  const check = document.createElement('input');
+  check.type = 'checkbox';
+  check.checked = item.done;
+  check.onchange = () => {
+    item.done = check.checked;
+    save();
+    if (date) {
+      row.remove();
+      $('pastOpenTasks').hidden = !$('pastOpenTaskList').children.length;
+    }
+  };
+  const title = document.createElement('span');
+  title.textContent = item.title;
+  if (date) {
+    const dateLabel = document.createElement('small');
+    dateLabel.textContent = date.split('-').reverse().join('.');
+    title.append(dateLabel);
+  }
+  label.append(check,title);
+  row.append(label);
+  if (onRemove) {
     const remove = document.createElement('button');
     remove.textContent = 'Удалить';
     remove.setAttribute('aria-label','Удалить задачу '+item.title);
-    remove.onclick = () => { items.splice(index,1); save(); renderTasks(); };
-    label.append(check,title);
-    row.append(label,remove);
-    list.append(row);
-  });
+    remove.onclick = onRemove;
+    row.append(remove);
+  }
+  return row;
+}
+function renderPastOpenTasks(pastDates,selectedDate) {
+  const list = $('pastOpenTaskList');
+  list.replaceChildren();
+  for (const date of pastDates) {
+    if (date === selectedDate) continue;
+    for (const item of data.tasks[date]) {
+      if (!item.done) list.append(taskRow(item,null,date));
+    }
+  }
+  $('pastOpenTasks').hidden = !list.children.length;
 }
 $('taskForm').onsubmit = event => {
   event.preventDefault();
