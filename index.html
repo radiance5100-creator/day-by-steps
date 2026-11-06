@@ -116,14 +116,19 @@ article:has(#houseWeeks){--accent:#6746a4;background:#eee8fb;border:0;box-shadow
 .house-item{grid-template-columns:32px minmax(0,1fr) auto}
 .house-item input[type=text]{width:100%;font:inherit;color:inherit;background:#ffffff80;border:1px solid #d8cfea;border-radius:9px;padding:7px}
 nav button[aria-current=true],#tasksView button[aria-pressed=true]{background:#e4daf7;color:#56368c}
-#tasksView h1{margin-top:24px}
-#tasksView input:not([type=checkbox]){font:inherit;min-height:44px;border:1px solid #d8cfea;border-radius:10px;padding:8px;min-width:0}
-#taskText{flex:1}
-#taskForm{margin-top:0}
+#tasksView h1,#plansView h1{margin-top:24px}
+:is(#tasksView,#plansView) input:not([type=checkbox]){font:inherit;min-height:44px;border:1px solid #d8cfea;border-radius:10px;padding:8px;min-width:0}
+#taskText,#planText{flex:1}
+#taskForm,#planForm{margin-top:0}
 #taskHistory{font:inherit;color:inherit;background:var(--paper);border:1px solid var(--line);border-radius:12px;min-height:44px;max-width:100%;padding:7px 12px}
 .task-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eee8fb}
 .task-row label{flex:1;display:flex;gap:8px;align-items:center;overflow-wrap:anywhere}
 .task-row input:checked+span{text-decoration:line-through;color:#655e72}
+#planList .task-row{flex-wrap:wrap}
+#planList .task-row label{flex-basis:100%}
+#scheduleDialog{width:min(420px,calc(100% - 32px));border:1px solid var(--line);border-radius:20px;padding:24px;color:var(--ink)}
+#scheduleDialog::backdrop{background:#192b2566}
+#scheduleDate{display:block;width:100%;min-height:44px;margin-top:8px;font:inherit;padding:8px}
 #cards .category-head{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 #cards .drag-active{position:relative;z-index:5;pointer-events:none;box-shadow:0 14px 32px #24243830;translate:var(--drag-x,0px) var(--drag-y,0px);animation:card-wiggle .38s ease-in-out infinite alternate}
 #cards article[data-category]{position:relative}
@@ -138,13 +143,13 @@ html.card-press,html.card-press *{-webkit-user-select:none!important;user-select
 .mood-legend span+span{color:#6746a4}
 #moodChart svg{width:100%;height:auto;display:block}
 </style>
-<main><nav class="row" aria-label="Разделы"><button id="trackerTab">Трекер</button><button id="tasksTab">Задачи</button><button id="moodTab">Самочувствие</button></nav><div id="trackerView">
-<header><span class="muted">Ежедневный трекер</span><h1>День по шагам</h1><p>Отмечай сделанное. Если день сорвался, клетки могут остаться пустыми.</p></header>
+<main><nav class="row" aria-label="Разделы"><button id="trackerTab">Трекер</button><button id="tasksTab">Задачи</button><button id="plansTab">Планы</button><button id="moodTab">Самочувствие</button></nav><div id="trackerView">
+<header><span class="muted">Ежедневный трекер</span><h1>День по шагам</h1></header>
 <div class="row"><button id="prev" aria-label="Предыдущий месяц">←</button><strong id="period"></strong><button id="next" aria-label="Следующий месяц">→</button><button id="today">Этот месяц</button></div>
 <p id="summary" role="status"></p>
-<small>Длинные занятия: первое нажатие — 50%, второе — 100%, третье снимает отметку.</small><p id="weekCaption" class="week-caption"></p><section id="cards" aria-label="Ежедневные категории"></section>
+<p id="weekCaption" class="week-caption"></p><section id="cards" aria-label="Ежедневные категории"></section>
 <article>
-<div class="category-head"><div class="category-title"><span id="houseIcon" class="badge"></span><h2>Бытовые вопросы<small>2 в неделю</small></h2></div><button id="houseToggle" class="category-toggle" aria-controls="houseWeeks"></button></div>
+<div class="category-head"><div class="category-title"><span id="houseIcon" class="badge"></span><h2>Бытовые вопросы<small>4 в неделю</small></h2></div><button id="houseToggle" class="category-toggle" aria-controls="houseWeeks"></button></div>
 <small>ЖКХ, покупка или поездка, которую давно откладываешь. Отметь один пункт за каждый закрытый вопрос.</small>
 <div id="houseWeeks" data-expanded="false"></div>
 </article>
@@ -155,11 +160,26 @@ html.card-press,html.card-press *{-webkit-user-select:none!important;user-select
 <h1>Задачи</h1>
 <div class="row"><button id="taskYesterday">Вчера</button><button id="taskToday">Сегодня</button><button id="taskTomorrow">Завтра</button><input type="date" id="taskDate" aria-label="Дата задач"><select id="taskHistory" aria-label="Прошлые дни с задачами" hidden></select></div>
 <article><form id="taskForm" class="row"><input id="taskText" required maxlength="250" aria-label="Новая задача" placeholder="Что нужно сделать?"><button>Добавить</button></form><div id="taskList"></div></article>
-<article id="pastOpenTasks" hidden>
+<article id="pastOpenTasks">
 <h2>Незакрытые задачи за прошлые дни</h2>
 <div id="pastOpenTaskList"></div>
 </article>
 </section>
+<section id="plansView" hidden>
+<h1>Планы</h1>
+<p class="muted">Дела на будущее, для которых пока нет даты.</p>
+<article><form id="planForm" class="row"><input id="planText" required maxlength="250" aria-label="Новый план" placeholder="Что хочется или нужно сделать?"><button>Добавить</button></form><div id="planList"></div></article>
+<details id="completedPlans" hidden><summary>Выполненные планы</summary><article id="completedPlanList"></article></details>
+</section>
+<dialog id="scheduleDialog" aria-labelledby="scheduleHeading">
+<form id="scheduleForm">
+<h2 id="scheduleHeading">Запланировать на день</h2>
+<p id="scheduleTitle"></p>
+<label for="scheduleDate">Дата</label><input id="scheduleDate" type="date" required>
+<p id="scheduleError" role="alert" hidden></p>
+<div class="row"><button type="submit">Перенести</button><button type="button" id="scheduleCancel">Отмена</button></div>
+</form>
+</dialog>
 <section id="moodView" hidden>
 <h1>Самочувствие</h1>
 <p>Оцени день по личному ощущению.</p>
@@ -477,10 +497,11 @@ function render() {
   const activeWeek = dateKey(weekStart);
   for (let first = add(start,-((start.getDay()+6)%7)); first < month(start,1); first = add(first,7)) {
     const week = dateKey(first);
-    const household = data.weeks[week] || [false,false];
+    const household = data.weeks[week] || [];
+    const questionNames = ['Первый вопрос','Второй вопрос','Третий вопрос','Четвёртый вопрос'];
     const row = document.createElement('section');
     row.dataset.active = String(week === activeWeek);
-    row.innerHTML = '<h3>'+dateFormat.format(first)+' — '+dateFormat.format(add(first,6))+'</h3><div class="house"><label><input type="checkbox"> Первый вопрос</label><label><input type="checkbox"> Второй вопрос</label></div><small></small>';
+    row.innerHTML = '<h3>'+dateFormat.format(first)+' — '+dateFormat.format(add(first,6))+'</h3><div class="house"><label><input type="checkbox"> Первый вопрос</label><label><input type="checkbox"> Второй вопрос</label><label><input type="checkbox"> Третий вопрос</label><label><input type="checkbox"> Четвёртый вопрос</label></div><small></small>';
     const count = row.querySelector('small');
     const titles = data.weekTitles?.[week] || ['',''];
     const notes = data.weekNotes?.[week] || ['',''];
@@ -488,8 +509,8 @@ function render() {
       const note = document.createElement('textarea');
       note.rows = 2;
       note.placeholder = 'Что сделал?';
-      note.setAttribute('aria-label', (i === 0 ? 'Первый вопрос' : 'Второй вопрос')+' · '+row.querySelector('h3').textContent);
-      note.value = notes[i];
+      note.setAttribute('aria-label', questionNames[i]+' · '+row.querySelector('h3').textContent);
+      note.value = notes[i] || '';
       note.disabled = week > today;
       note.oninput = () => {
         notes[i] = note.value;
@@ -525,7 +546,7 @@ function render() {
       title.type = 'text';
       title.placeholder = label.textContent.trim();
       title.setAttribute('aria-label','Название · '+title.placeholder+' · '+row.querySelector('h3').textContent);
-      title.value = titles[i];
+      title.value = titles[i] || '';
       title.disabled = week > today;
       title.oninput = () => {
         titles[i] = title.value;
@@ -537,9 +558,11 @@ function render() {
       item.append(label,title,comment,note);
       updateComment();
     });
-    const update = () => { count.textContent = household.filter(Boolean).length + ' из 2 вопросов'; };
-    row.querySelectorAll('input').forEach((box,i) => {
-      box.checked = household[i];
+    const update = () => { count.textContent = [0,2,4,6].filter(index => household[index]).length + ' из 4 вопросов'; };
+    // Earlier versions stored checkbox values at even indexes among all inputs.
+    row.querySelectorAll('input[type=checkbox]').forEach((box,index) => {
+      const i = index * 2;
+      box.checked = Boolean(household[i]);
       box.disabled = week > today;
       box.onchange = () => {
         household[i] = box.checked;
@@ -556,6 +579,8 @@ $('prev').onclick = () => { start = month(start,-1); showHouseHistory(false); re
 $('next').onclick = () => { start = month(start,1); showHouseHistory(false); render(); };
 $('today').onclick = () => { start = month(); showHouseHistory(false); render(); };
 render();function showTasks(open) {
+  $('plansView').hidden = true;
+  $('plansTab').removeAttribute('aria-current');
   $("moodView").hidden = true;
   $("moodTab").removeAttribute("aria-current");
   $('trackerView').hidden = open;
@@ -596,9 +621,9 @@ function renderTasks() {
     save();
     renderTasks();
   })));
-  renderPastOpenTasks(pastDates,key);
+  renderPastOpenTasks(pastDates);
 }
-function taskRow(item,onRemove,date) {
+function taskRow(item,onRemove,date,onChange = renderTasks) {
   const row = document.createElement('div');
   row.className = 'task-row';
   const label = document.createElement('label');
@@ -608,10 +633,7 @@ function taskRow(item,onRemove,date) {
   check.onchange = () => {
     item.done = check.checked;
     save();
-    if (date) {
-      row.remove();
-      $('pastOpenTasks').hidden = !$('pastOpenTaskList').children.length;
-    }
+    onChange();
   };
   const title = document.createElement('span');
   title.textContent = item.title;
@@ -631,16 +653,15 @@ function taskRow(item,onRemove,date) {
   }
   return row;
 }
-function renderPastOpenTasks(pastDates,selectedDate) {
+function renderPastOpenTasks(pastDates) {
   const list = $('pastOpenTaskList');
   list.replaceChildren();
   for (const date of pastDates) {
-    if (date === selectedDate) continue;
     for (const item of data.tasks[date]) {
       if (!item.done) list.append(taskRow(item,null,date));
     }
   }
-  $('pastOpenTasks').hidden = !list.children.length;
+  if (!list.children.length) list.textContent = 'Незакрытых задач за прошлые дни пока нет.';
 }
 $('taskForm').onsubmit = event => {
   event.preventDefault();
@@ -663,6 +684,84 @@ $('taskHistory').onchange = () => {
   renderTasks();
 };
 $('taskDate').onchange = renderTasks;
+function renderPlans() {
+  const plans = data.plans ||= [];
+  $('planList').replaceChildren();
+  $('completedPlanList').replaceChildren();
+  plans.forEach((item,index) => {
+    const row = taskRow(item, () => {
+      plans.splice(index,1);
+      save();
+      renderPlans();
+    },null,renderPlans);
+    if (!item.done) {
+      const schedule = document.createElement('button');
+      schedule.type = 'button';
+      schedule.textContent = 'Запланировать на день';
+      schedule.onclick = () => {
+        scheduledPlan = item;
+        $('scheduleTitle').textContent = item.title;
+        $('scheduleDate').value = dateKey(new Date());
+        $('scheduleError').hidden = true;
+        $('scheduleDialog').showModal();
+        $('scheduleDate').focus();
+      };
+      row.append(schedule);
+    }
+    $(item.done ? 'completedPlanList' : 'planList').append(row);
+  });
+  if (!$('planList').children.length) $('planList').textContent = 'Добавь дело, к которому хочешь вернуться позже.';
+  $('completedPlans').hidden = !$('completedPlanList').children.length;
+}
+let scheduledPlan = null;
+$('scheduleCancel').onclick = () => $('scheduleDialog').close();
+$('scheduleDialog').onclose = () => { scheduledPlan = null; };
+$('scheduleForm').onsubmit = event => {
+  event.preventDefault();
+  if (!scheduledPlan || !data.plans.includes(scheduledPlan)) return;
+  const date = $('scheduleDate').value;
+  if (!$('scheduleForm').reportValidity()) return;
+  const nextData = {
+    ...data,
+    plans: data.plans.filter(item => item !== scheduledPlan),
+    tasks: {
+      ...data.tasks,
+      [date]: [...(data.tasks?.[date] || []),{title:scheduledPlan.title,done:false}]
+    }
+  };
+  try {
+    localStorage.setItem(storageKey,JSON.stringify(nextData));
+  } catch {
+    $('scheduleError').textContent = 'Не удалось сохранить перенос. Попробуй ещё раз.';
+    $('scheduleError').hidden = false;
+    return;
+  }
+  data = nextData;
+  scheduledPlan = null;
+  $('scheduleDialog').close();
+  $('taskDate').value = date;
+  showTasks(true);
+  $('taskDate').focus();
+};
+$('plansTab').onclick = () => {
+  showTasks(false);
+  $('trackerView').hidden = true;
+  $('trackerTab').removeAttribute('aria-current');
+  $('plansView').hidden = false;
+  $('plansTab').setAttribute('aria-current','true');
+  renderPlans();
+};
+$('planForm').onsubmit = event => {
+  event.preventDefault();
+  const input = $('planText');
+  const title = input.value.trim();
+  if (!title) return;
+  (data.plans ||= []).push({title,done:false});
+  save();
+  input.value = '';
+  renderPlans();
+  input.focus();
+};
 selectTaskDate(1);
 showTasks(false);
 if (location.protocol === 'https:' && 'serviceWorker' in navigator) {
